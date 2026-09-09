@@ -1,0 +1,17 @@
+export const shortcuts = [
+  { keys: ['?'], action: 'Abrir o manual de atalhos' },
+  { keys: ['/'], action: 'Focar a pesquisa global' },
+  { keys: ['Ctrl', 'K'], action: 'Abrir a pesquisa global' },
+  { keys: ['\\'], action: 'Recolher ou expandir o menu lateral' },
+  { keys: ['Shift', 'T'], action: 'Alternar tema claro/escuro' },
+  { keys: ['Alt', 'P'], action: 'Focar o seletor de projeto ativo' },
+  { keys: ['Alt', '-'], action: 'Diminuir o tamanho do texto' },
+  { keys: ['Alt', '+'], action: 'Aumentar o tamanho do texto' },
+  { keys: ['Alt', '0'], action: 'Restaurar o tamanho padrão do texto' },
+  { keys: ['G', 'D'], action: 'Ir para Início' },
+  { keys: ['G', 'A'], action: 'Ir para Assistente IA' },
+  { keys: ['G', 'O'], action: 'Ir para Documentações' },
+  { keys: ['G', 'F'], action: 'Ir para Fórum' },
+  { keys: ['G', 'P'], action: 'Ir para Projetos, quando permitido' },
+  { keys: ['Esc'], action: 'Fechar menu, pesquisa ou diálogo aberto' },
+]

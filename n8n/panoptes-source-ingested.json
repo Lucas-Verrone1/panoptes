@@ -1,0 +1,75 @@
+{
+  "name": "Panoptes - Source Ingested",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "panoptes/source-ingested",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "panoptes-source-webhook",
+      "name": "Source ingested webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 300],
+      "webhookId": "panoptes-source-ingested"
+    },
+    {
+      "parameters": {
+        "jsCode": "const expected = $env.N8N_WEBHOOK_SECRET;\nconst received = $json.headers?.['x-panoptes-webhook-secret'] ?? $json.headers?.['X-Panoptes-Webhook-Secret'];\nif (!expected || received !== expected) {\n  return [{ json: { ok: false, statusCode: 401, error: 'Unauthorized' } }];\n}\nreturn [{ json: { ...($json.body ?? $json), ok: true } }];"
+      },
+      "id": "panoptes-validate-secret",
+      "name": "Validate FastAPI secret",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [500, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [{ "value1": "={{ $json.ok }}", "operation": "true" }]
+        }
+      },
+      "id": "panoptes-secret-if",
+      "name": "Authorized?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [740, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { ok: true, accepted: true, sourceId: $json.sourceId, documentId: $json.documentId } }}",
+        "options": { "responseCode": 202 }
+      },
+      "id": "panoptes-accepted",
+      "name": "Accepted",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1000, 220]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { ok: false, error: $json.error } }}",
+        "options": { "responseCode": 401 }
+      },
+      "id": "panoptes-rejected",
+      "name": "Rejected",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1000, 400]
+    }
+  ],
+  "connections": {
+    "Source ingested webhook": { "main": [[{ "node": "Validate FastAPI secret", "type": "main", "index": 0 }]] },
+    "Validate FastAPI secret": { "main": [[{ "node": "Authorized?", "type": "main", "index": 0 }]] },
+    "Authorized?": { "main": [[{ "node": "Accepted", "type": "main", "index": 0 }], [{ "node": "Rejected", "type": "main", "index": 0 }]] }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1" },
+  "versionId": "panoptes-source-ingested-v1",
+  "meta": { "templateCredsSetupCompleted": true },
+  "tags": []
+}
