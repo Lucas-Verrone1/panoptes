@@ -1,0 +1,86 @@
+{
+  "name": "Panoptes - Source Ingested v2",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "panoptes/source-ingested-v2",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "panoptes-v2-webhook",
+      "name": "Source ingested webhook v2",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [220, 300],
+      "webhookId": "panoptes-source-ingested-v2"
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $json.body ?? $json;\nconst headers = $json.headers ?? {};\nconst expected = String($env.N8N_WEBHOOK_SECRET ?? '');\nconst received = String(headers['x-panoptes-webhook-secret'] ?? headers['X-Panoptes-Webhook-Secret'] ?? '');\nconst required = ['eventId', 'event', 'sourceId', 'projectId', 'documentId', 'title', 'url', 'chunkCount'];\nconst missing = required.filter((key) => body[key] === undefined || body[key] === null || body[key] === '');\nconst authorized = Boolean(expected) && received === expected;\nconst valid = body.event === 'source.ingested' && missing.length === 0 && Number.isInteger(Number(body.chunkCount)) && Number(body.chunkCount) > 0;\nreturn [{ json: { ...body, authorized, valid, ok: authorized && valid, error: !authorized ? 'Unauthorized' : missing.length ? `Missing fields: ${missing.join(', ')}` : valid ? null : 'Invalid payload' } }];"
+      },
+      "id": "panoptes-v2-validate",
+      "name": "Validate secret and payload",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [{ "value1": "={{ $json.ok }}", "operation": "true" }]
+        }
+      },
+      "id": "panoptes-v2-if",
+      "name": "Authorized and valid?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [700, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $getWorkflowStaticData('global');\nconst events = data.events ?? {};\nconst now = Date.now();\nfor (const [id, timestamp] of Object.entries(events)) {\n  if (now - Number(timestamp) > 86400000) delete events[id];\n}\nconst duplicate = Boolean(events[$json.eventId]);\nevents[$json.eventId] = now;\ndata.events = events;\nreturn [{ json: { ...$json, duplicate, accepted: true } }];"
+      },
+      "id": "panoptes-v2-idempotency",
+      "name": "Deduplicate event",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [940, 220]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { ok: true, accepted: true, duplicate: $json.duplicate, eventId: $json.eventId, documentId: $json.documentId } }}",
+        "options": { "responseCode": 202 }
+      },
+      "id": "panoptes-v2-accepted",
+      "name": "Accepted 202",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1190, 220]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { ok: false, accepted: false, error: $json.error, eventId: $json.eventId ?? null } }}",
+        "options": { "responseCode": 400 }
+      },
+      "id": "panoptes-v2-rejected",
+      "name": "Rejected 400",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [940, 400]
+    }
+  ],
+  "connections": {
+    "Source ingested webhook v2": { "main": [[{ "node": "Validate secret and payload", "type": "main", "index": 0 }]] },
+    "Validate secret and payload": { "main": [[{ "node": "Authorized and valid?", "type": "main", "index": 0 }]] },
+    "Authorized and valid?": { "main": [[{ "node": "Deduplicate event", "type": "main", "index": 0 }], [{ "node": "Rejected 400", "type": "main", "index": 0 }]] },
+    "Deduplicate event": { "main": [[{ "node": "Accepted 202", "type": "main", "index": 0 }]] }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1" },
+  "versionId": "panoptes-source-ingested-v2",
+  "meta": { "templateCredsSetupCompleted": true },
+  "tags": []
+}
