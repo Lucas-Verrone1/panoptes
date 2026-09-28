@@ -2,7 +2,7 @@
 
 import { FormEvent, useMemo, useState } from 'react'
 import Link from 'next/link'
-import { documents, forumTopics } from '@/lib/data'
+import { documents } from '@/lib/data'
 import { Icon } from './Icon'
 
 export function SearchClient() {
@@ -13,7 +13,6 @@ export function SearchClient() {
     if (!q) return []
     return [
       ...documents.filter(d => `${d.title} ${d.summary} ${d.sources.join(' ')}`.toLowerCase().includes(q)).map(d => ({ href: `/documents/${d.id}`, title: d.title, text: d.summary, type: 'Documentação' })),
-      ...forumTopics.filter(t => t.title.toLowerCase().includes(q)).map(t => ({ href: `/forum?topic=${t.id}`, title: t.title, text: `${t.replies} respostas · ${t.status}`, type: 'Fórum' })),
     ]
   }, [submitted])
   const submit = (e: FormEvent) => { e.preventDefault(); setSubmitted(query) }

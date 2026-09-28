@@ -1,6 +1,8 @@
+import re
+import time
+
 from google import genai
 from google.genai import types
-import time
 
 from app.config import settings
 
@@ -14,6 +16,42 @@ def gemini_client() -> genai.Client:
     if _client is None:
         _client = genai.Client(api_key=settings.gemini_api_key)
     return _client
+
+
+def sanitize_answer(answer: str) -> str:
+    if not answer:
+        return ""
+
+    cleaned = answer.strip()
+    cleaned = re.sub(r"(?i)^\s*(resposta|answer)\s*:\s*", "", cleaned, count=1)
+    cleaned = re.sub(r"(?m)^\s*#+\s*", "", cleaned)
+    cleaned = re.sub(r"(?m)^\s*[-*+]\s*", "- ", cleaned)
+    cleaned = re.sub(r"(?<!\*)\*{1,3}([^\n*]+?)\*{1,3}(?!\*)", r"\1", cleaned)
+    cleaned = re.sub(r"(?<!_)_{1,2}([^_\n]+?)_{1,2}(?!_)", r"\1", cleaned)
+    cleaned = re.sub(r"(?s)`([^`]+)`", r"\1", cleaned)
+    cleaned = re.sub(r"(?m)^\s*[-*]\s*(?:[0-9]+\.\s*)?", "- ", cleaned)
+    cleaned = re.sub(r"(?m)^\s*[-*]\s*[-*]\s*[-*]+\s*$", "", cleaned)
+    cleaned = re.sub(r"(?m)^\s*[-*]\s*(?:---|___)\s*$", "", cleaned)
+    cleaned = re.sub(r"\n{3,}", "\n\n", cleaned)
+
+    paragraphs: list[str] = []
+    seen: set[str] = set()
+    for paragraph in re.split(r"\n\s*\n", cleaned):
+        candidate = re.sub(r"\s+", " ", paragraph.strip())
+        if not candidate:
+            continue
+        candidate = candidate.strip(" -•")
+        if not candidate:
+            continue
+        candidate = re.sub(r"(?i)^(?:resposta|answer)\s*[:\-]\s*", "", candidate)
+        candidate = re.sub(r"(?i)^(?:segue abaixo|a seguir|observação|nota)\s*[:\-]?\s*", "", candidate)
+        normalized = re.sub(r"\s+", " ", candidate.lower())
+        if normalized in seen:
+            continue
+        seen.add(normalized)
+        paragraphs.append(candidate)
+
+    return "\n\n".join(paragraphs).strip()
 
 
 def embed_texts(texts: list[str]) -> list[list[float]]:
@@ -30,15 +68,62 @@ def embed_texts(texts: list[str]) -> list[list[float]]:
     return vectors
 
 
-def generate_answer(question: str, context: str, project_name: str) -> str:
-    client = gemini_client()
-    prompt = (
+def transcribe_audio(audio: bytes, mime_type: str) -> str:
+    if not audio:
+        raise ValueError("O áudio está vazio.")
+
+    result = gemini_client().models.generate_content(
+        model=settings.gemini_model,
+        contents=[
+            types.Part.from_bytes(data=audio, mime_type=mime_type),
+            "Transcreva o áudio em português. Retorne somente as palavras ditas, sem introdução, resumo ou comentários.",
+        ],
+    )
+    transcript = (result.text or "").strip()
+    if not transcript:
+        raise RuntimeError("Não foi possível reconhecer fala no áudio.")
+    return transcript
+
+
+def build_answer_prompt(question: str, context: str, project_name: str, assistant_config: object | None = None) -> str:
+    response_style = getattr(assistant_config, 'response_style', 'direct')
+    handoff_enabled = getattr(assistant_config, 'handoff_enabled', True)
+    handoff_text = (getattr(assistant_config, 'handoff_text', '') or '').strip()
+    custom_prompt = (getattr(assistant_config, 'custom_prompt', '') or '').strip()
+
+    style_instruction = {
+        'direct': 'Mantenha a resposta direta, clara e objetiva. Resuma o necessário sem adicionar contexto extra.',
+        'patient': 'Responda com calma e didática. Explique o raciocínio em etapas curtas e acrescente contexto quando ajudarem a compreensão.',
+        'technical': 'Responda com rigor técnico, priorizando precisão, nomenclatura correta e estrutura lógica.',
+    }.get(response_style, 'Mantenha a resposta direta, clara e objetiva.')
+
+    handoff_instruction = (
+        'Quando a pergunta exigir uma ação humana, decisão de negócio, aprovação ou encaminhamento, informe isso de forma clara e indique o próximo passo.'
+        if handoff_enabled else 'Nunca sugira hand-offs ou encaminhamentos. Responda somente com o conteúdo disponível.'
+    )
+    if handoff_text:
+        handoff_instruction = f"{handoff_instruction} {handoff_text}"
+
+    return (
         "Você é o assistente do Panoptes. Responda em português, com clareza, "
-        f"somente com base no contexto do projeto {project_name}. "
-        "Se a informação não estiver no contexto, diga que não encontrou na documentação cadastrada.\n\n"
+        f"somente com base no contexto indexado do projeto {project_name}. "
+        "A consulta à web é permitida apenas na etapa de ingestão das documentações. "
+        "Depois da ingestão, você deve responder somente com as informações já anexadas ao banco e com o contexto fornecido abaixo. "
+        "Se a informação não estiver no contexto, diga que não encontrou na documentação cadastrada. "
+        f"{style_instruction} "
+        f"{handoff_instruction} "
+        f"{custom_prompt} "
+        "Estruture a resposta com blocos simples e legíveis: primeiro 'Resumo:', depois 'Pontos principais:' com listas curtas, e por fim 'Conclusão:' com a resposta direta ao pedido. "
+        "Use frases curtas, preservando a informação principal, e evite repetir texto ou inserir marcadores visuais desnecessários.\n\n"
         f"[CONTEXTO]\n{context}\n\n[PERGUNTA]\n{question}"
     )
-    models = [settings.gemini_model]
+
+
+def generate_answer(question: str, context: str, project_name: str, assistant_config: object | None = None) -> str:
+    client = gemini_client()
+    preferred_model = (getattr(assistant_config, 'preferred_model', '') or '').strip()
+    prompt = build_answer_prompt(question, context, project_name, assistant_config)
+    models = [preferred_model] if preferred_model else [settings.gemini_model]
     if settings.gemini_fallback_model and settings.gemini_fallback_model not in models:
         models.append(settings.gemini_fallback_model)
     last_error: Exception | None = None
@@ -46,7 +131,7 @@ def generate_answer(question: str, context: str, project_name: str) -> str:
         for attempt in range(max(1, settings.gemini_max_retries)):
             try:
                 result = client.models.generate_content(model=model, contents=prompt)
-                return (result.text or "").strip()
+                return sanitize_answer(result.text or "")
             except Exception as exc:
                 last_error = exc
                 error_text = str(exc)
@@ -73,7 +158,7 @@ def summarize_source(title: str, text: str) -> str:
                 f"Título da página: {title}\n\nTexto extraído:\n{text[:12000]}"
             ),
         )
-        summary = " ".join((result.text or "").split())
+        summary = sanitize_answer(result.text or "")
         return summary or _fallback_summary(text)
     except Exception:
         return _fallback_summary(text)
@@ -81,4 +166,7 @@ def summarize_source(title: str, text: str) -> str:
 
 def _fallback_summary(text: str) -> str:
     sentences = [sentence.strip() for sentence in text.replace("\n", " ").split(".") if sentence.strip()]
-    return " ".join(". ".join(sentences[:4])[:1000].split()) + ("." if sentences else "Resumo indisponível.")
+    summary = " ".join(". ".join(sentences[:4])[:1000].split())
+    if not summary:
+        return "Resumo indisponível."
+    return sanitize_answer(summary + ".")

@@ -1,11 +1,14 @@
+from pathlib import Path
 from typing import Annotated
+from uuid import uuid4
 
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
+from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, HTTPException, UploadFile
 from pydantic import BaseModel, Field, HttpUrl
 
+from app.config import settings
 from app.db import get_supabase
 from app.deps import CurrentUser, require_roles
-from app.services.ingest import process_source
+from app.services.ingest import process_source, process_uploaded_source
 from app.services.scrape import validate_public_url, normalize_url
 
 router = APIRouter(prefix="/sources", tags=["sources"])
@@ -44,6 +47,50 @@ async def create_source(
         background.add_task(process_source, result["source"]["id"], result["job_id"], url, body.project_id)
     return SourceOut(**result["source"], job_id=result["job_id"])
 
+
+@router.post("/upload", response_model=SourceOut)
+async def upload_source(
+    file: Annotated[UploadFile, File(description="Arquivo para indexação")],
+    project_id: Annotated[str, Form(...)],
+    background: BackgroundTasks,
+    user: Annotated[CurrentUser, Depends(require_roles("admin", "moderator"))],
+):
+    if not file.filename:
+        raise HTTPException(status_code=400, detail="Informe um arquivo para upload.")
+
+    extension = Path(file.filename).suffix.lower()
+    if extension not in {".pdf", ".docx", ".zip"}:
+        raise HTTPException(status_code=400, detail="Formato não suportado. Envie PDF, DOCX ou ZIP.")
+
+    payload = await file.read()
+    if len(payload) > settings.upload_max_bytes:
+        raise HTTPException(
+            status_code=413,
+            detail=f"Arquivo excede o limite de {settings.upload_max_bytes // (1024 * 1024)} MB por upload.",
+        )
+
+    client = get_supabase()
+    project = client.table("projects").select("id").eq("id", project_id).limit(1).execute()
+    if not project.data:
+        raise HTTPException(status_code=404, detail="Projeto não encontrado.")
+
+    source_url = file.filename
+    result = client.rpc(
+        "register_source",
+        {"p_project": project_id, "p_url": source_url, "p_user": user.id},
+    ).execute().data
+
+    if result["start"]:
+        background.add_task(
+            process_uploaded_source,
+            result["source"]["id"],
+            result["job_id"],
+            payload,
+            source_url,
+            project_id,
+        )
+
+    return SourceOut(**result["source"], job_id=result["job_id"])
 
 
 @router.get("/{source_id}", response_model=SourceOut)

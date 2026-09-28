@@ -1,0 +1,296 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600&display=swap');
+
+.home:global(.dashboard-minimal) {
+  height: calc(100dvh - var(--topbar));
+  min-height: 0;
+  padding: 24px;
+}
+
+.home :global(.dashboard-center) {
+  width: 100%;
+  max-width: none;
+  min-width: 0;
+  height: 100%;
+  margin: 0;
+  grid-template-rows: minmax(0, 1fr);
+  gap: 0;
+}
+
+.home :global(.ai-page-compact) {
+  padding: 0;
+}
+
+.home :global(.home-chat-shell) {
+  height: 100%;
+  min-height: 0;
+  grid-template-columns: minmax(230px, 280px) minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr);
+  align-items: stretch;
+  gap: clamp(20px, 3vw, 48px);
+}
+
+.home :global(.home-chat-sidebar) {
+  grid-column: 1;
+  grid-row: 1;
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+  padding: 18px 12px 12px;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--surface) 85%, var(--surface-2));
+}
+
+.home :global(.home-chat-sidebar .panel-heading) {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 16px;
+  padding: 0 6px 14px;
+  border-bottom: 1px solid var(--line);
+}
+
+.home :global(.home-chat-sidebar .secondary-button) {
+  width: 100%;
+  justify-content: center;
+  padding: 11px 14px;
+  font-size: .8rem;
+}
+
+.home :global(.home-chat-history-list) {
+  flex: 1;
+  min-height: 0;
+  max-height: none;
+  align-content: start;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+  scrollbar-color: var(--muted) transparent;
+  padding: 4px 6px 4px 2px;
+}
+
+.home :global(.home-chat-thread) {
+  box-shadow: none;
+  border-radius: 12px;
+}
+
+.home :global(.home-chat-main) {
+  grid-column: 2;
+  grid-row: 1;
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+  padding: 24px clamp(0px, 1vw, 20px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  justify-content: flex-start;
+  gap: 28px;
+}
+
+.home :global(.home-chat-main > .assistant-config-panel) {
+  flex: 0 0 auto;
+  width: 100%;
+  max-width: 1080px;
+  margin: 0 auto;
+}
+
+.home :global(.home-chat-main > .assistant-config-panel:first-child) {
+  margin-top: auto;
+}
+
+.home :global(.home-chat-main > .assistant-config-panel:last-child) {
+  margin-bottom: auto;
+}
+
+.home :global(.home-chat-main.home-chat-active) {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  overflow: hidden;
+  gap: 20px;
+}
+
+.home :global(.home-chat-main.home-chat-active > .assistant-config-panel) {
+  min-height: 0;
+  margin: 0 auto;
+}
+
+.home :global(.home-chat-conversation) {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-gutter: stable;
+}
+
+.home :global(.home-chat-conversation .chat-thread) {
+  overflow: visible;
+}
+
+.home :global(.home-chat-welcome) {
+  margin: 0 auto 32px;
+  text-align: center;
+}
+
+.home :global(.hero-mark) {
+  width: 64px;
+  height: 64px;
+  border-radius: 22px;
+  margin-bottom: 24px;
+}
+
+.home :global(.home-chat-greeting) {
+  margin: 0 0 10px;
+  font-size: clamp(1.1rem, 1.6vw, 1.5rem);
+  font-weight: 500;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+
+.home :global(.home-chat-welcome h1) {
+  margin: 0;
+  font-family: 'Space Grotesk', Manrope, ui-sans-serif, system-ui, sans-serif;
+  font-size: clamp(2rem, 3.4vw, 3.4rem);
+  line-height: 1.16;
+  font-weight: 600;
+  letter-spacing: -.035em;
+  color: var(--accent);
+  text-wrap: balance;
+}
+
+.home :global(.home-chat-description) {
+  max-width: 440px;
+  margin: 18px auto 0;
+  font-size: .95rem;
+  line-height: 1.7;
+  color: var(--muted);
+  text-wrap: balance;
+}
+
+.home :global(.chat-composer) {
+  align-items: center;
+  padding: 14px;
+  border-radius: 22px;
+}
+
+.home :global(.chat-composer textarea) {
+  min-width: 0;
+  padding-left: 8px;
+}
+
+.home :global(.composer-send) {
+  width: 50px;
+  height: 50px;
+  border-radius: 15px;
+}
+
+.home :global(.home-chat-tools) {
+  margin-top: 18px;
+  gap: 10px;
+}
+
+.home :global(.chat-bubble) {
+  overflow-wrap: anywhere;
+}
+
+.home :global(.home-chat-waiting) {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 16px;
+  color: var(--muted);
+  font-size: .85rem;
+}
+
+.home :global(.home-chat-waiting-dots) {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 20px;
+}
+
+.home :global(.home-chat-waiting-dots > span) {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  animation: waiting-dot 1.2s ease-in-out infinite;
+}
+
+.home :global(.home-chat-waiting-dots > span:nth-child(2)) { animation-delay: .15s; }
+.home :global(.home-chat-waiting-dots > span:nth-child(3)) { animation-delay: .3s; }
+
+@keyframes waiting-dot {
+  0%, 60%, 100% { transform: translateY(0); opacity: .4; }
+  30% { transform: translateY(-4px); opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home :global(.home-chat-waiting-dots > span) { animation: none; }
+}
+
+/* Keep the home chat still during pointer interactions. */
+.home :global(.home-chat-shell .panel),
+.home :global(.chat-composer),
+.home :global(.home-chat-shell button) {
+  transition: none;
+}
+
+.home :global(.home-chat-thread:hover),
+.home :global(.composer-send:hover),
+.home :global(.chat-composer:focus-within) {
+  transform: none;
+}
+
+.home :global(.home-chat-sidebar:hover) {
+  box-shadow: var(--shadow-soft);
+}
+
+.home :global(.home-chat-thread:hover),
+.home :global(.home-chat-main > .assistant-config-panel:hover) {
+  box-shadow: none;
+}
+
+.home :global(.composer-send:hover) {
+  filter: none;
+}
+
+@media (max-width: 1000px) {
+  .home:global(.dashboard-minimal) { padding: 18px; }
+  .home :global(.home-chat-shell) {
+    grid-template-columns: 230px minmax(0, 1fr);
+    gap: 20px;
+  }
+}
+
+@media (max-width: 760px) {
+  .home:global(.dashboard-minimal) {
+    height: auto;
+    min-height: calc(100dvh - var(--topbar));
+    padding: 18px 14px;
+  }
+  .home :global(.dashboard-center) { height: auto; }
+  .home :global(.home-chat-shell) {
+    height: auto;
+    grid-template-rows: auto auto;
+  }
+  .home :global(.home-chat-main) {
+    grid-column: 1;
+    grid-row: 1;
+    height: auto;
+    min-height: 55dvh;
+    padding: 24px 0;
+    overflow: visible;
+  }
+  .home :global(.home-chat-sidebar) {
+    grid-column: 1;
+    grid-row: 2;
+    height: 320px;
+  }
+  .home :global(.home-chat-main.home-chat-active) {
+    height: calc(100dvh - var(--topbar) - 36px);
+    min-height: 420px;
+  }
+  .home :global(.home-chat-welcome h1) { font-size: clamp(1.8rem, 6.8vw, 2.6rem); }
+  .home :global(.home-chat-description) { font-size: .85rem; }
+}

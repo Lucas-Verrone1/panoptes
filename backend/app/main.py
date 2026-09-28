@@ -9,7 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
 from app.deps import seed_demo_users
-from app.routers import ai, auth, documents, ml, sources, users
+from app.routers import ai, analytics, auth, documents, ml, projects, sources, users, zendesk
 from app.services.ingest import recover_pending_sources
 
 
@@ -29,7 +29,7 @@ async def database_error_handler(request: Request, exc: APIError):
     logging.getLogger(__name__).error("Database failure on %s: %s", request.url.path, exc.code)
     missing_schema = str(exc.code) in {"42703", "42P01", "42883", "PGRST202", "PGRST204", "PGRST205"}
     detail = (
-        "O banco está com o schema desatualizado. Execute backend/sql/migrations/002_ingestion.sql no SQL Editor do Supabase e tente novamente."
+        "O banco está com o schema desatualizado. Execute as migrações pendentes em backend/sql/migrations no SQL Editor do Supabase e tente novamente."
         if missing_schema else "Não foi possível concluir a operação no banco de dados. Consulte o log do backend."
     )
     return JSONResponse(status_code=503, content={"detail": detail})
@@ -45,10 +45,13 @@ app.add_middleware(
 )
 app.include_router(auth.router)
 app.include_router(users.router)
+app.include_router(projects.router)
 app.include_router(sources.router)
 app.include_router(documents.router)
 app.include_router(ai.router)
+app.include_router(analytics.router)
 app.include_router(ml.router)
+app.include_router(zendesk.router)
 
 
 @app.get("/health")
@@ -59,5 +62,6 @@ def health():
         "gemini": bool(settings.gemini_api_key),
         "turnstile": bool(settings.turnstile_secret),
         "n8n": bool(settings.n8n_webhook_url),
+        "zendesk": bool(settings.zendesk_subdomain and settings.zendesk_email and settings.zendesk_api_token),
         "gemini_model": settings.gemini_model,
     }

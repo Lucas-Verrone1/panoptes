@@ -20,7 +20,7 @@ export function DocumentsLibrary() {
   useEffect(() => {
     let active=true
     setDocuments([])
-    if(!project.id) return
+    if(!project?.id) return
     apiFetch<Array<{ id: string; title: string; summary: string; project_id: string; version: string; source_url?: string | null; generated_by_ai: boolean; updated_at: string }>>(`/documents?project_id=${encodeURIComponent(project.id)}`)
       .then(rows => {if(active) setDocuments(rows.map(row => ({
         id: row.id,
@@ -36,7 +36,7 @@ export function DocumentsLibrary() {
       } as DocumentItem)))})
       .catch(e => {if(active){setDocuments([]);}})
     return ()=>{active=false}
-  }, [project.id, project.name])
+  }, [project?.id, project?.name])
   const filtered = useMemo(() => {
     const q = query.toLowerCase().trim()
     if (!q) return documents

@@ -6,7 +6,7 @@ import { Icon } from './Icon'
 
 const initial = [
   { id: 1, title: 'Documentação concluída', text: 'Módulo Financeiro v2.1 está disponível.', href: '/documents/doc-fin', unread: true },
-  { id: 2, title: 'Resposta aprovada', text: 'Uma resposta do fórum entrou na base de conhecimento.', href: '/forum?topic=3', unread: true },
+  { id: 2, title: 'Chamado indexado', text: 'Uma solução do Zendesk entrou na base de conhecimento.', href: '/zendesk', unread: true },
   { id: 3, title: 'Nova conquista', text: 'Você está próximo do título Supercolaborador.', href: '/profile', unread: false },
 ]
 

@@ -7,7 +7,8 @@ export type Project = {
   source: string
   branch: string
   files: number
-  status: 'Indexado' | 'Processando' | 'Falha'
+  status: string
+  is_active?: boolean
   updated: string
 }
 

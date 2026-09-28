@@ -33,6 +33,60 @@ def _clean_extracted_text(value: str) -> str:
     return "\n\n".join(cleaned)
 
 
+def _extract_text_from_html(html: str, final_url: str) -> tuple[str, str]:
+    metadata = trafilatura.extract_metadata(html)
+    title = metadata.title if metadata and metadata.title else final_url
+
+    extracted = trafilatura.extract(html, include_comments=False, include_tables=True, favor_recall=True) or ""
+    text = _clean_extracted_text(extracted)
+
+    if len(text.strip()) < 80:
+        soup = BeautifulSoup(html, "lxml")
+        title_tag = soup.title.get_text(" ", strip=True) if soup.title else None
+        if title_tag:
+            title = title_tag
+
+        container_selectors = ["main", "article", "body"]
+        for selector in container_selectors:
+            container = soup.select_one(selector)
+            if not container:
+                continue
+            for tag in container.select("script, style, noscript, svg, iframe"):
+                tag.decompose()
+            body_text = "\n".join(line.strip() for line in container.stripped_strings if line.strip())
+            text = _clean_extracted_text(body_text)
+            if len(text.strip()) >= 80:
+                break
+
+    return text.strip(), title
+
+
+async def _render_page_text(url: str) -> tuple[str, str] | None:
+    try:
+        from playwright.async_api import async_playwright
+    except Exception:
+        return None
+
+    try:
+        async with async_playwright() as p:
+            browser = await p.chromium.launch(headless=True)
+            try:
+                page = await browser.new_page(user_agent="PanoptesBot/1.0")
+                await page.goto(url, wait_until="domcontentloaded", timeout=45000)
+                try:
+                    await page.wait_for_load_state("networkidle", timeout=15000)
+                except Exception:
+                    pass
+                await page.wait_for_timeout(500)
+                title = (await page.title()) or url
+                body_text = (await page.locator("body").inner_text()).strip()
+                return _clean_extracted_text(body_text), title
+            finally:
+                await browser.close()
+    except Exception:
+        return None
+
+
 def _is_private_host(hostname: str) -> bool:
     try:
         infos = socket.getaddrinfo(hostname, None)
@@ -154,13 +208,17 @@ async def scrape_url(url: str) -> dict:
                 visited.add(current)
                 try:
                     final_url, html = await fetch_public(client, current)
-                    text = trafilatura.extract(html, include_comments=False, include_tables=True, favor_recall=True) or ""
-                    metadata = trafilatura.extract_metadata(html)
-                    title = metadata.title if metadata and metadata.title else final_url
+                    text, title = _extract_text_from_html(html, final_url)
+                    if len(text.strip()) < 80:
+                        rendered = await _render_page_text(final_url)
+                        if rendered:
+                            rendered_text, rendered_title = rendered
+                            if len(rendered_text.strip()) >= len(text.strip()):
+                                text, title = rendered_text, rendered_title
                     if len(text.strip()) >= 80:
                         pages.append({"url": final_url, "title": title, "text": text.strip()})
                     else:
-                        report["skipped"].append({"url": current, "reason": "Texto insuficiente; a página pode exigir JavaScript"})
+                        report["skipped"].append({"url": current, "reason": "Texto insuficiente; a página pode exigir JavaScript ou conter conteúdo dinâmico"})
                     links = []
                     for link in BeautifulSoup(html, "lxml").select("a[href]"):
                         candidate = normalize_url(urljoin(final_url, link["href"]))

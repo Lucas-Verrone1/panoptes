@@ -26,13 +26,13 @@ Também é possível alternar o perfil no menu da conta para revisar as permiss�
 - Assistente IA
 - Busca
 - Documentações
-- Fórum
+- Zendesk
 - Projetos e interna de projeto
 - Upload
 - Consultas
 - Usuários
 - Machine Learning
-- Analytics
+- Indicadores
 - Configurações
 
 ### Moderador
@@ -40,18 +40,18 @@ Também é possível alternar o perfil no menu da conta para revisar as permiss�
 - Assistente IA
 - Busca
 - Documentações
-- Fórum / moderação
+- Zendesk / curadoria
 - Projetos em modo de acompanhamento
 - Upload
 - Consultas somente leitura
-- Analytics
+- Indicadores
 
 ### Usuário
 - Início minimalista com chat
 - Assistente IA
 - Busca
 - **Visualização das documentações geradas pela IA**
-- Fórum
+- Zendesk
 - Perfil, títulos e emblemas
 
 ## Acessibilidade
@@ -75,7 +75,7 @@ O projeto possui tema claro/escuro persistido no navegador, menu lateral retrát
 
 ## Observação sobre backend
 
-Este pacote é um protótipo frontend funcional. Login, upload, consulta, fórum, feedback e alterações administrativas usam estado local para demonstrar comportamento e permissões. A integração com os endpoints reais pode ser conectada depois nos mesmos componentes sem alterar a arquitetura visual.
+Este pacote inclui fluxos de login, fontes, consulta, Zendesk, feedback e administração. A curadoria Zendesk usa a API do backend; a sincronização automática com a conta Zendesk depende de configurar o mapeamento de tickets para projetos.
 
 
 ## Ajustes de contexto e interface
@@ -102,7 +102,7 @@ Este pacote é um protótipo frontend funcional. Login, upload, consulta, fórum
 
 ## Ajustes v10 — acessibilidade e componentes
 
-- Correção da estrutura de scroll do shell, menus, tabelas, fórum, modais e painéis laterais.
+- Correção da estrutura de scroll do shell, menus, tabelas, modais e painéis laterais.
 - Dropdowns nativos substituídos por selects customizados com navegação por teclado e ARIA.
 - O seletor de projeto foi removido da tela inicial; o projeto ativo continua no cabeçalho e contextualiza o chat.
 - Controle global de tamanho de texto em quatro níveis, persistido no navegador.

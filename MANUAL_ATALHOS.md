@@ -13,7 +13,7 @@
 | `G` depois `D` | Ir para Início |
 | `G` depois `A` | Ir para Assistente IA |
 | `G` depois `O` | Ir para Documentações |
-| `G` depois `F` | Ir para Fórum |
+| `G` depois `Z` | Ir para Zendesk |
 | `G` depois `P` | Ir para Projetos, quando o perfil possuir acesso |
 | `Esc` | Fechar diálogo, menu ou pesquisa |
 
@@ -29,9 +29,9 @@
 
 ## Perfis
 
-- **Administrador:** gestão de usuários, documentos, projetos, fórum, consultas, IA, ML, Analytics e configurações.
-- **Moderador:** upload, documentos, fórum/moderação, consultas, IA e Analytics limitado.
-- **Usuário:** IA, busca, documentações geradas, fórum e perfil/conquistas.
+- **Administrador:** gestão de usuários, documentos, projetos, Zendesk, consultas, IA, ML, indicadores e configurações.
+- **Moderador:** upload, documentos, curadoria Zendesk, consultas, IA e indicadores limitados.
+- **Usuário:** IA, busca, documentações geradas, chamados Zendesk indexados e perfil/conquistas.
 
 ## Contexto por projeto
 

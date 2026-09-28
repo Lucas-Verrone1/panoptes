@@ -8,7 +8,7 @@ import { SelectMenu } from './SelectMenu'
 
 const queryMap = {
   docs: { label:'Documentos indexados por projeto', sql:'SELECT project, COUNT(*) AS documents FROM documents GROUP BY project;', rows:[['Protheus TCC','1248'],['Integração API','342'],['Módulo Financeiro','823']] },
-  forum: { label:'Tópicos por status', sql:'SELECT status, COUNT(*) AS total FROM forum_topics GROUP BY status;', rows:[['Aprovada','96'],['Em aberto','18'],['Aguardando validação','14']] },
+  zendesk: { label:'Chamados Zendesk por status', sql:'SELECT knowledge_status, COUNT(*) AS total FROM zendesk_tickets GROUP BY knowledge_status;', rows:[['Indexado','96'],['Novo','18'],['Aprovado','14']] },
   feedback: { label:'Feedback da IA', sql:'SELECT feedback, COUNT(*) AS total FROM ai_feedback GROUP BY feedback;', rows:[['Positivo','284'],['Negativo','19']] },
 }
 

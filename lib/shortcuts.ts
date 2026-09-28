@@ -11,7 +11,7 @@ export const shortcuts = [
   { keys: ['G', 'D'], action: 'Ir para Início' },
   { keys: ['G', 'A'], action: 'Ir para Assistente IA' },
   { keys: ['G', 'O'], action: 'Ir para Documentações' },
-  { keys: ['G', 'F'], action: 'Ir para Fórum' },
+  { keys: ['G', 'Z'], action: 'Ir para Zendesk' },
   { keys: ['G', 'P'], action: 'Ir para Projetos, quando permitido' },
   { keys: ['Esc'], action: 'Fechar menu, pesquisa ou diálogo aberto' },
 ]

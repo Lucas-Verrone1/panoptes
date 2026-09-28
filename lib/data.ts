@@ -18,12 +18,11 @@ export const projects: Project[] = [
   { id: 'financeiro', name: 'Módulo Financeiro', description: 'Regras, código e documentação das rotinas financeiras.', source: 'Azure DevOps', branch: 'develop', files: 823, status: 'Processando', updated: 'Ontem, 17:32' },
   { id: 'relatorios', name: 'Relatórios Gerenciais', description: 'Snapshot importado para análise documental.', source: 'ZIP', branch: 'snapshot', files: 156, status: 'Falha', updated: 'Ontem, 16:08' },
 ]
-
 export const documents: DocumentItem[] = [
   {
     id: 'doc-fin', title: 'Módulo Financeiro', project: 'Protheus TCC', type: 'Markdown', version: '2.1', updated: 'Hoje, 10:20', generatedByAI: true,
     summary: 'Documentação consolidada das rotinas financeiras, contas a pagar e receber, fluxo de caixa, tesouraria e conciliação.',
-    sources: ['Documentacao_API.md', 'Regras_Negocio.xlsx', 'Banco_de_Dados.sql', 'Fórum · resposta aprovada'],
+    sources: ['Documentacao_API.md', 'Regras_Negocio.xlsx', 'Banco_de_Dados.sql', 'Zendesk · solução aprovada'],
     sections: [
       { title: 'Objetivo', paragraphs: ['Centralizar a visão técnica e funcional do módulo financeiro, mantendo rastreabilidade entre código, regras de negócio, dados e conhecimento humano validado.'] },
       { title: 'Principais funcionalidades', bullets: ['Gestão de contas a pagar e receber', 'Conciliação bancária automática e manual', 'Emissão e baixa de títulos', 'Integração com contabilidade e tesouraria', 'Relatórios financeiros e fluxo de caixa'] },
@@ -43,7 +42,7 @@ export const documents: DocumentItem[] = [
   {
     id: 'doc-estoque', title: 'Módulo Estoque', project: 'Protheus TCC', type: 'PDF', version: '1.4', updated: 'Ontem, 14:02', generatedByAI: true,
     summary: 'Rotinas de estoque, movimentações, reservas, saldos e integrações com faturamento.',
-    sources: ['estoque.md', 'SIGAEST.prw', 'Fórum · conteúdo aprovado'],
+    sources: ['estoque.md', 'SIGAEST.prw', 'Zendesk · conteúdo aprovado'],
     sections: [
       { title: 'Escopo', paragraphs: ['Abrange movimentação de materiais, reservas, saldos e pontos de integração com faturamento.'] },
       { title: 'Componentes', bullets: ['Movimentações', 'Reservas', 'Saldos', 'Validações de duplicidade', 'Integrações com faturamento'] },
@@ -51,15 +50,7 @@ export const documents: DocumentItem[] = [
   },
 ]
 
-export const forumTopics = [
-  { id: 1, title: 'Como documentar a rotina de Integração API?', status: 'Aguardando validação', replies: 6, project: 'Protheus TCC' },
-  { id: 2, title: 'Configuração de contingência no módulo financeiro', status: 'Em aberto', replies: 3, project: 'Protheus TCC' },
-  { id: 3, title: 'Parametrização de contas contábeis', status: 'Aprovada', replies: 5, project: 'Protheus TCC' },
-  { id: 4, title: 'Validação de duplicidade no SIGAEST', status: 'Em aberto', replies: 2, project: 'Protheus TCC' },
-]
+export const zendeskKnowledgeStatuses = ['new', 'approved', 'indexed', 'rejected'] as const
 
-export const collaborators = [
-  { name: 'Rafael Mendes', xp: 1280, title: 'Guardião do Conhecimento', approved: 23 },
-  { name: 'Marina', xp: 910, title: 'Supercolaborador', approved: 14 },
-  { name: 'Arthur Ferreira', xp: 760, title: 'Supercolaborador', approved: 11 },
-]
+export type ZendeskKnowledgeStatus = (typeof zendeskKnowledgeStatuses)[number]
+

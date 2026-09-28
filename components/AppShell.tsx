@@ -18,9 +18,9 @@ import { useAccessibility } from './AccessibilityProvider'
 import type { Role } from '@/lib/types'
 
 const titleMap: Record<string, string> = {
-  '/dashboard': 'Início', '/ai': 'Assistente IA', '/search': 'Buscar', '/documents': 'Documentações', '/forum': 'Fórum',
-  '/projects': 'Projetos', '/upload': 'Fontes', '/queries': 'Consultas', '/users': 'Usuários', '/ml': 'Machine Learning',
-  '/analytics': 'Analytics', '/settings': 'Configurações', '/profile': 'Perfil', '/manual': 'Manual de atalhos',
+  '/dashboard': 'Início', '/ai': 'Assistente IA', '/search': 'Buscar', '/documents': 'Documentações',
+  '/projects': 'Projetos', '/manual': 'Guia do Panoptes IA', '/upload': 'Fontes', '/users': 'Usuários',
+  '/analytics': 'Indicadores', '/settings': 'Configurações', '/profile': 'Perfil', '/zendesk': 'Zendesk',
 }
 
 function isTypingTarget(target: EventTarget | null) {
@@ -47,13 +47,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const { toggle: toggleTheme } = useTheme()
 
   const role = session?.role ?? 'user'
+  const isAiPage = pathname === '/ai'
   const availableNav = useMemo(() => navItems.filter(item => item.roles.includes(role)), [role])
   const primaryNav = useMemo(
-    () => availableNav.filter(item => ['/dashboard', '/ai', '/documents', '/forum', '/projects'].includes(item.href)),
+    () => availableNav.filter(item => ['/dashboard', '/ai', '/documents', '/zendesk', '/projects', '/manual'].includes(item.href)),
     [availableNav],
   )
   const toolsNav = useMemo(
-    () => availableNav.filter(item => !['/dashboard', '/ai', '/documents', '/forum', '/projects', '/search'].includes(item.href)),
+    () => availableNav.filter(item => !['/dashboard', '/ai', '/documents', '/zendesk', '/projects', '/search'].includes(item.href)),
     [availableNav],
   )
   const toolsActive = toolsNav.some(item => pathname === item.href || pathname.startsWith(item.href + '/'))
@@ -137,7 +138,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         return
       }
       if (sequence === 'g') {
-        const destinations: Record<string, string> = { d: '/dashboard', a: '/ai', o: '/documents', f: '/forum', p: '/projects' }
+        const destinations: Record<string, string> = { d: '/dashboard', a: '/ai', o: '/documents', z: '/zendesk', p: '/projects' }
         const destination = destinations[key]
         setSequence('')
         if (destination && canAccess(destination, role)) {
@@ -231,7 +232,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <ThemeToggle compact />
             <Notifications />
             <div className="user-context-cluster">
-              <ProjectSelector variant="account" />
+              {!isAiPage && <ProjectSelector variant="account" />}
               <div className="popover-anchor" ref={accountRef}>
                 <button className="profile-trigger" type="button" onClick={() => setAccountOpen(v => !v)} aria-expanded={accountOpen} aria-haspopup="menu">
                   <span className="avatar small-avatar">{session.name.slice(0,1)}</span>
@@ -241,7 +242,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 {accountOpen && (
                   <div className="popover account-popover" role="menu">
                     <div className="popover-head"><span><strong>{session.name}</strong><small>{session.email}</small></span></div>
-                    <div className="account-project-mobile"><ProjectSelector variant="account" /></div>
+                    {!isAiPage && <div className="account-project-mobile"><ProjectSelector variant="account" /></div>}
                     <div className="role-switcher" aria-label="Visualizar como">
                       <span className="eyebrow">Visualizar como</span>
                       {(['admin','moderator','user'] as Role[]).map(r => (

@@ -1,2 +1,10 @@
-import { redirect } from 'next/navigation'
-export default function Home(){ redirect('/dashboard') }
+import { PortalPage } from '@/components/PortalPage'
+import { DashboardClient } from '@/components/DashboardClient'
+
+export default function Home() {
+  return (
+    <PortalPage>
+      <DashboardClient />
+    </PortalPage>
+  )
+}

@@ -6,11 +6,12 @@ Rotas previstas no fluxo funcional fornecido:
 - `POST /admin/users`
 - `POST /moderator/documents/upload`
 - `GET /moderator/queries/...`
-- API de moderação do fórum
+- API de curadoria Zendesk
 - `POST /ai/chat`
 - `POST /ai/feedback`
 - `GET /documents/{id}`
-- `POST /forum/replies`
+- `GET /zendesk/status` e `GET /zendesk/tickets`
+- `POST /zendesk/tickets/{id}/approve`, `/reject` e `/index`
 
 ## Contratos implementados
 
@@ -27,4 +28,4 @@ Rotas previstas no fluxo funcional fornecido:
 
 O FastAPI continua sendo a API pública e o dono do índice. Depois de uma fonte ser indexada, `services/n8n.py` envia `source.ingested` para o webhook configurado em `N8N_WEBHOOK_URL`, usando `X-Panoptes-Webhook-Secret`, retry e `eventId`. O workflow robusto está em `n8n/panoptes-source-ingested-v2.json`.
 
-Fórum, consultas administrativas e analytics ainda usam dados locais no frontend e precisam de tabelas e endpoints próprios antes de serem considerados persistentes.
+Consultas administrativas ainda usam dados locais no frontend e precisam de tabelas e endpoints próprios antes de serem consideradas persistentes. A curadoria Zendesk usa a migração `backend/sql/migrations/003_zendesk.sql`; a sincronização automática ainda depende da regra de associação entre tickets e projetos.
