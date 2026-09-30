@@ -8,14 +8,12 @@ from postgrest.exceptions import APIError
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
-from app.deps import seed_demo_users
 from app.routers import ai, analytics, auth, documents, ml, projects, sources, users, zendesk
 from app.services.ingest import recover_pending_sources
 
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
-    seed_demo_users()
     try:
         await recover_pending_sources()
     except Exception:

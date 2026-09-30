@@ -6,20 +6,12 @@ import { useAuth } from './AuthProvider'
 import { ThemeToggle } from './ThemeToggle'
 import { Logo } from './Logo'
 import { TurnstileWidget } from './TurnstileWidget'
-import { roleLabels } from '@/lib/data'
-import type { Role } from '@/lib/types'
-
-const presets: { label: string; email: string; password: string; role: Role }[] = [
-  { label: 'Administrador', email: 'admin@panoptes.local', password: 'admin123', role: 'admin' },
-  { label: 'Moderador', email: 'moderador@panoptes.local', password: 'mod123', role: 'moderator' },
-  { label: 'Usuário', email: 'usuario@panoptes.local', password: 'user123', role: 'user' },
-]
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 export function LoginScreen() {
-  const [email, setEmail] = useState('usuario@panoptes.local')
-  const [password, setPassword] = useState('user123')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
   const [captcha, setCaptcha] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
@@ -50,11 +42,6 @@ export function LoginScreen() {
     else setError(result.error || 'E-mail ou senha inválidos.')
   }
 
-  const usePreset = (preset: typeof presets[number]) => {
-    setEmail(preset.email)
-    setPassword(preset.password)
-  }
-
   return (
     <main id="conteudo-principal" className="login-page">
       <div className="login-theme"><ThemeToggle compact /></div>
@@ -74,25 +61,15 @@ export function LoginScreen() {
           <div className="login-card-head">
             <span className="eyebrow">Acesso</span>
             <h2 id="login-title">Entrar no Panoptes</h2>
-            <p>Use uma conta de demonstração ou informe suas credenciais.</p>
+            <p>Informe as credenciais da sua conta.</p>
           </div>
-          <form onSubmit={submit} className="form-stack" noValidate>
-            <label className="field"><span>E-mail</span><input type="email" autoComplete="username" required value={email} onChange={e => setEmail(e.target.value)} /></label>
-            <label className="field"><span>Senha</span><input type="password" autoComplete="current-password" required value={password} onChange={e => setPassword(e.target.value)} /></label>
+          <form onSubmit={submit} className="form-stack" noValidate autoComplete="off">
+            <label className="field"><span>E-mail</span><input type="email" autoComplete="off" required value={email} onChange={e => setEmail(e.target.value)} /></label>
+            <label className="field"><span>Senha</span><input type="password" autoComplete="off" required value={password} onChange={e => setPassword(e.target.value)} /></label>
             <TurnstileWidget onToken={onCaptcha} />
             {error && <div className="form-error" role="alert">{error}</div>}
             <button className="primary-button full" type="submit" disabled={loading}>{loading ? 'Entrando…' : 'Entrar'}</button>
           </form>
-          <div className="demo-access">
-            <span className="eyebrow">Visualizar perfis</span>
-            <div className="demo-grid">
-              {presets.map(preset => (
-                <button key={preset.role} type="button" onClick={() => usePreset(preset)} className="demo-button">
-                  <strong>{roleLabels[preset.role]}</strong><small>Preencher acesso</small>
-                </button>
-              ))}
-            </div>
-          </div>
         </div>
       </section>
     </main>

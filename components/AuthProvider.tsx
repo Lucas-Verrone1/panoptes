@@ -3,7 +3,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { apiFetch, setToken } from '@/lib/api'
-import { demoAccounts } from '@/lib/data'
 import type { Role } from '@/lib/types'
 
 type Session = { name: string; email: string; role: Role }
@@ -12,7 +11,6 @@ type AuthContextValue = {
   hydrated: boolean
   login: (email: string, password: string, captchaToken?: string) => Promise<{ ok: boolean; error?: string }>
   logout: () => void
-  setDemoRole: (role: Role) => void
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null)
@@ -66,14 +64,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       persist({ name: result.name, email: result.email, role: result.role })
       return { ok: true }
     } catch (error) {
-      const fallback = demoAccounts[email]
-      const apiDown = error instanceof Error && /Failed to fetch|NetworkError|fetch/.test(error.message)
-      if (fallback && fallback.password === password && apiDown) {
-        setToken(null)
-        persist({ name: fallback.name, email, role: fallback.role })
-        return { ok: true, error: 'API offline: sessão local de demonstração.' }
-      }
-      const message = error instanceof Error ? error.message : 'E-mail ou senha inválidos.'
+      const isNetworkError = error instanceof Error && /Failed to fetch|NetworkError|fetch/i.test(error.message)
+      const message = isNetworkError
+        ? 'Não foi possível conectar ao servidor. Tente novamente quando a API estiver disponível.'
+        : error instanceof Error ? error.message : 'E-mail ou senha inválidos.'
       return { ok: false, error: message }
     }
   }, [persist])
@@ -84,13 +78,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     router.replace('/login')
   }, [persist, router])
 
-  const setDemoRole = useCallback((role: Role) => {
-    if (!session) return
-    persist({ ...session, role })
-    router.push('/dashboard')
-  }, [persist, router, session])
-
-  const value = useMemo(() => ({ session, hydrated, login, logout, setDemoRole }), [session, hydrated, login, logout, setDemoRole])
+  const value = useMemo(() => ({ session, hydrated, login, logout }), [session, hydrated, login, logout])
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
 

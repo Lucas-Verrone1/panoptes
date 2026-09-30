@@ -1,11 +1,5 @@
 import type { DocumentItem, Project, Role } from './types'
 
-export const demoAccounts: Record<string, { password: string; role: Role; name: string }> = {
-  'admin@panoptes.local': { password: 'admin123', role: 'admin', name: 'Victor' },
-  'moderador@panoptes.local': { password: 'mod123', role: 'moderator', name: 'Marina' },
-  'usuario@panoptes.local': { password: 'user123', role: 'user', name: 'Lucas' },
-}
-
 export const roleLabels: Record<Role, string> = {
   admin: 'Administrador',
   moderator: 'Moderador',

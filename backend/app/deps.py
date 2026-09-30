@@ -46,39 +46,3 @@ def require_roles(*roles: Role):
         return user
 
     return checker
-
-
-def seed_demo_users() -> None:
-    from app.config import settings
-    if not settings.seed_demo_accounts:
-        return
-    try:
-        client = get_supabase()
-    except HTTPException:
-        return
-    from app.security import hash_password
-
-    existing = client.table("profiles").select("email").limit(1).execute()
-    if existing.data:
-        return
-    rows = [
-        {
-            "email": "admin@panoptes.local",
-            "name": "Victor",
-            "role": "admin",
-            "password_hash": hash_password("admin123"),
-        },
-        {
-            "email": "moderador@panoptes.local",
-            "name": "Marina",
-            "role": "moderator",
-            "password_hash": hash_password("mod123"),
-        },
-        {
-            "email": "usuario@panoptes.local",
-            "name": "Lucas",
-            "role": "user",
-            "password_hash": hash_password("user123"),
-        },
-    ]
-    client.table("profiles").insert(rows).execute()

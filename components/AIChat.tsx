@@ -31,35 +31,12 @@ type AssistantConfig = {
 }
 
 const assistantConfigStorageKey = 'panoptes-assistant-config'
-const conversationStorageKey = 'panoptes-ai-conversations'
 const defaultAssistantConfig: AssistantConfig = {
   responseStyle: 'direct',
   handoffEnabled: true,
   handoffText: 'Se a pergunta exigir uma decisão humana, encaminhe o usuário para o responsável do processo ou peça confirmação antes de agir.',
   preferredModel: 'gemini-3.6-flash',
   customPrompt: '',
-}
-
-function loadStoredConversations(): Conversation[] {
-  if (typeof window === 'undefined') {
-    return [{ id: createSessionId(), title: 'Nova conversa', messages: [] }]
-  }
-
-  try {
-    const stored = window.localStorage.getItem(conversationStorageKey)
-    if (!stored) {
-      return [{ id: createSessionId(), title: 'Nova conversa', messages: [] }]
-    }
-
-    const parsed = JSON.parse(stored) as Partial<Conversation>[]
-    if (Array.isArray(parsed) && parsed.length > 0 && parsed.every(item => item && typeof item.id === 'string' && Array.isArray(item.messages))) {
-      return parsed as Conversation[]
-    }
-  } catch {
-    // Ignore invalid saved state; create a fresh history.
-  }
-
-  return [{ id: createSessionId(), title: 'Nova conversa', messages: [] }]
 }
 
 const modelOptions = ['gemini-3.6-flash', 'gemini-2.5-flash', 'gemini-2.5-pro']
@@ -152,35 +129,26 @@ export function AIChat({ compact = false }: { compact?: boolean }) {
   const [assistantConfig, setAssistantConfig] = useState<AssistantConfig>(loadAssistantConfig)
   const [question, setQuestion] = useState('')
   const [loading, setLoading] = useState(false)
+  const [historyLoading, setHistoryLoading] = useState(true)
   const [voiceBusy, setVoiceBusy] = useState(false)
   const [homeConversationOpen, setHomeConversationOpen] = useState(false)
   const conversationPanelRef = useRef<HTMLElement>(null)
   const [respondingConversationId, setRespondingConversationId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [conversations, setConversations] = useState<Conversation[]>(() => {
-    const stored = loadStoredConversations()
-    const firstConversation = stored[0] ?? { id: initialConversationId.current, title: 'Nova conversa', messages: [] }
-    if (stored.length === 0) {
-      return [{ id: initialConversationId.current, title: 'Nova conversa', messages: [] }]
-    }
-    return stored.map(conversation => ({
-      ...conversation,
-      id: conversation.id || firstConversation.id,
-      title: conversation.title || 'Nova conversa',
-      messages: Array.isArray(conversation.messages) ? conversation.messages : [],
-    }))
-  })
-  const [activeConversationId, setActiveConversationId] = useState<string>(() => {
-    const stored = loadStoredConversations()
-    return stored[0]?.id ?? initialConversationId.current
-  })
+  const [conversations, setConversations] = useState<Conversation[]>(() => [
+    { id: initialConversationId.current, title: 'Nova conversa', messages: [] },
+  ])
+  const [conversationScope, setConversationScope] = useState('')
+  const [activeConversationId, setActiveConversationId] = useState(initialConversationId.current)
   const searchParams = useSearchParams()
   const lastAutoSubmittedRef = useRef<string | null>(null)
   const { project } = useProject()
   const { session } = useAuth()
   const requestedProjectId = searchParams.get('project') ?? project?.id ?? ''
   const requestedQuestion = searchParams.get('q')?.trim() ?? ''
-  const activeConversation = conversations.find(item => item.id === activeConversationId) ?? conversations[0]
+  const requestedScope = `${session?.email ?? ''}:${project?.id ?? ''}`
+  const visibleConversations = conversationScope === requestedScope ? conversations : []
+  const activeConversation = visibleConversations.find(item => item.id === activeConversationId) ?? visibleConversations[0]
   const messages = activeConversation?.messages ?? []
   const showHomeConversation = homeConversationOpen && (messages.length > 0 || (loading && respondingConversationId === activeConversationId))
 
@@ -191,37 +159,63 @@ export function AIChat({ compact = false }: { compact?: boolean }) {
   }, [compact, activeConversationId, messages.length, loading, showHomeConversation])
 
   useEffect(() => {
-    const activeProjectId = project?.id
-    if (!activeProjectId || !session) return
+    window.localStorage.removeItem('panoptes-ai-conversations')
+  }, [])
 
+  useEffect(() => {
+    const activeProjectId = project?.id
+    const accountEmail = session?.email
+    if (!activeProjectId || !accountEmail) {
+      setHistoryLoading(false)
+      setConversationScope('')
+      return
+    }
+
+    const projectId = activeProjectId
     let active = true
+    const scope = `${accountEmail}:${projectId}`
+    setHistoryLoading(true)
+    setConversationScope('')
+    setConversations([])
+    setActiveConversationId('')
+    setHomeConversationOpen(false)
+    setError(null)
+
     async function loadConversations() {
-      if (!activeProjectId) return
       try {
-        const history = await apiFetch<Conversation[]>(`/ai/conversations?project_id=${encodeURIComponent(activeProjectId)}`)
+        const history = await apiFetch<Conversation[]>(`/ai/conversations?project_id=${encodeURIComponent(projectId)}`)
         if (!active) return
 
         if (history.length > 0) {
           setConversations(history)
-          setActiveConversationId(currentId => history.some(item => item.id === currentId) ? currentId : history[0].id)
+          setActiveConversationId(history[0].id)
+          setConversationScope(scope)
           return
         }
 
         const freshConversation = { id: createSessionId(), title: 'Nova conversa', messages: [] }
         setConversations([freshConversation])
         setActiveConversationId(freshConversation.id)
-      } catch {
-        // If the backend is unavailable, keep the in-browser fallback history.
+        setConversationScope(scope)
+      } catch (caughtError) {
+        if (!active) return
+        const freshConversation = { id: createSessionId(), title: 'Nova conversa', messages: [] }
+        setConversations([freshConversation])
+        setActiveConversationId(freshConversation.id)
+        setConversationScope(scope)
+        setError(caughtError instanceof Error ? caughtError.message : 'Não foi possível carregar suas conversas.')
+      } finally {
+        if (active) setHistoryLoading(false)
       }
     }
 
     void loadConversations()
     return () => { active = false }
-  }, [project?.id, session])
+  }, [project?.id, session?.email])
 
   const sendQuestion = useCallback(async (nextQuestion: string, nextProjectId: string, conversationId = activeConversationId) => {
     const trimmed = nextQuestion.trim()
-    if (!trimmed || !nextProjectId) return
+    if (!trimmed || !nextProjectId || historyLoading) return
 
     setLoading(true)
     setRespondingConversationId(conversationId)
@@ -270,7 +264,7 @@ export function AIChat({ compact = false }: { compact?: boolean }) {
       setLoading(false)
       setRespondingConversationId(null)
     }
-  }, [activeConversationId, assistantConfig])
+  }, [activeConversationId, assistantConfig, historyLoading])
 
   useEffect(() => {
     try {
@@ -281,20 +275,12 @@ export function AIChat({ compact = false }: { compact?: boolean }) {
   }, [assistantConfig])
 
   useEffect(() => {
-    try {
-      window.localStorage.setItem(conversationStorageKey, JSON.stringify(conversations))
-    } catch {
-      // Ignore persistence failures in restricted environments.
-    }
-  }, [conversations])
-
-  useEffect(() => {
     if (compact) {
       lastAutoSubmittedRef.current = null
       return
     }
 
-    if (!requestedQuestion || !requestedProjectId) {
+    if (!requestedQuestion || !requestedProjectId || historyLoading) {
       lastAutoSubmittedRef.current = null
       return
     }
@@ -304,10 +290,10 @@ export function AIChat({ compact = false }: { compact?: boolean }) {
 
     lastAutoSubmittedRef.current = requestKey
     void sendQuestion(requestedQuestion, requestedProjectId)
-  }, [compact, requestedProjectId, requestedQuestion, sendQuestion])
+  }, [compact, historyLoading, requestedProjectId, requestedQuestion, sendQuestion])
 
   const submitQuestion = async () => {
-    if ((compact && loading) || voiceBusy) return
+    if (historyLoading || (compact && loading) || voiceBusy) return
     const trimmed = question.trim()
     if (!trimmed || !project?.id) return
 
@@ -541,7 +527,7 @@ export function AIChat({ compact = false }: { compact?: boolean }) {
                 onBusyChange={setVoiceBusy}
                 onTranscript={transcript => setQuestion(current => current.trim() ? `${current.trim()} ${transcript}` : transcript)}
               />
-              <button type="submit" className="composer-send" aria-label="Enviar pergunta" disabled={loading || voiceBusy || !project?.id}>
+              <button type="submit" className="composer-send" aria-label="Enviar pergunta" disabled={loading || historyLoading || voiceBusy || !project?.id}>
                 <Icon name="sparkles" size={19} />
               </button>
             </form>
@@ -574,7 +560,7 @@ export function AIChat({ compact = false }: { compact?: boolean }) {
           </div>
 
           <div className="home-chat-history-list" style={{ display: 'grid', gap: 8 }}>
-            {conversations.map(conversation => (
+            {visibleConversations.map(conversation => (
               <div
                 key={conversation.id}
                 className={`panel ${compact ? 'home-chat-thread' : ''} ${conversation.id === activeConversationId ? 'active-chat-thread' : ''}`}

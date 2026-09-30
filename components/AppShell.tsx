@@ -15,7 +15,6 @@ import { Notifications } from './Notifications'
 import { ProjectSelector } from './ProjectSelector'
 import { AccessibilityMenu } from './AccessibilityMenu'
 import { useAccessibility } from './AccessibilityProvider'
-import type { Role } from '@/lib/types'
 
 const titleMap: Record<string, string> = {
   '/dashboard': 'Início', '/ai': 'Assistente IA', '/search': 'Buscar', '/documents': 'Documentações',
@@ -29,7 +28,7 @@ function isTypingTarget(target: EventTarget | null) {
 }
 
 export function AppShell({ children }: { children: React.ReactNode }) {
-  const { session, hydrated, logout, setDemoRole } = useAuth()
+  const { session, hydrated, logout } = useAuth()
   const { increaseFont, decreaseFont, resetFont } = useAccessibility()
   const pathname = usePathname()
   const router = useRouter()
@@ -243,15 +242,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   <div className="popover account-popover" role="menu">
                     <div className="popover-head"><span><strong>{session.name}</strong><small>{session.email}</small></span></div>
                     {!isAiPage && <div className="account-project-mobile"><ProjectSelector variant="account" /></div>}
-                    <div className="role-switcher" aria-label="Visualizar como">
-                      <span className="eyebrow">Visualizar como</span>
-                      {(['admin','moderator','user'] as Role[]).map(r => (
-                        <button key={r} type="button" className={r === role ? 'role-option active' : 'role-option'} onClick={() => setDemoRole(r)}>
-                          <Icon name={r === 'admin' ? 'users' : r === 'moderator' ? 'shield-check' : 'user-round'} size={18} />
-                          <span><strong>{roleLabels[r]}</strong><small>{r === 'admin' ? 'Gestão completa' : r === 'moderator' ? 'Fontes e moderação' : 'Consulta e colaboração'}</small></span>
-                        </button>
-                      ))}
-                    </div>
                     <div className="popover-actions account-links">
                       <Link href="/profile" onClick={() => setAccountOpen(false)}>Perfil e conquistas</Link>
                       <button type="button" onClick={() => { setAccountOpen(false); setHelpOpen(true) }}>Atalhos de teclado</button>

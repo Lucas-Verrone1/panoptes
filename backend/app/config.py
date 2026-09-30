@@ -28,7 +28,6 @@ class Settings(BaseSettings):
     scrape_max_characters: int = 500_000
     upload_max_bytes: int = 8 * 1024 * 1024
     upload_max_text_chars: int = 250_000
-    seed_demo_accounts: bool = False
     zendesk_subdomain: str = ""
     zendesk_email: str = ""
     zendesk_api_token: str = ""
